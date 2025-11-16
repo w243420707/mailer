@@ -2,67 +2,6 @@
 <html lang="zh-cn">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Mailer 配置管理</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20251117" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <div class="title">Mailer 配置管理</div>
-        <div class="subtitle">批量发送 · 模板变量 · 进度跟踪</div>
-      </div>
-
-      <div class="layout-grid">
-        <!-- 左列：配置 / 粘贴发送 -->
-        <div class="stack">
-          <div class="card" id="card-config">
-            <h3>连接与主题</h3>
-            <form id="cfgForm" onsubmit="return false;">
-              <section>
-                <div class="row">
-                  <label class="muted">面板地址(server)</label>
-                  <input id="postal.server" class="input" type="text" placeholder="https://your-postal" />
-                </div>
-                <div class="row">
-                  <label class="muted">API Key</label>
-                  <input id="postal.key" class="input" type="password" placeholder="API Key" />
-                </div>
-              </section>
-              <section>
-                <small class="muted">填写 1~5 个主题，发送时轮询；可在下方临时覆盖。</small>
-                <div class="subjects" style="margin-top:10px;">
-                  <input id="setting.subject1" class="input" type="text" placeholder="主题1" />
-                  <input id="setting.subject2" class="input" type="text" placeholder="主题2" />
-                  <input id="setting.subject3" class="input" type="text" placeholder="主题3" />
-                  <input id="setting.subject4" class="input" type="text" placeholder="主题4" />
-                  <input id="setting.subject5" class="input" type="text" placeholder="主题5" />
-                </div>
-                <div class="row" style="margin-top:14px;">
-                  <label class="muted">代理(proxy)</label>
-                  <input id="setting.proxy" class="input" type="text" placeholder="http://ip:port" />
-                </div>
-              </section>
-              <section>
-                <div class="toolbar">
-                  <button id="save" class="btn btn-primary" type="button">保存配置</button>
-                  <button id="refresh" class="btn btn-ghost" type="button">刷新</button>
-                  <span id="saveMsg" class="muted"></span>
-                </div>
-              </section>
-            </form>
-          </div>
-
-          <div class="card" id="card-send-list">
-            <h3>粘贴发送（支持去重）</h3>
-            <section>
-              <div class="row">
-                <label class="muted">收件人</label>
-                <textarea id="recipients_text" class="textarea" placeholder="a@example.com\nb@example.com\n..."></textarea>
-              </div>
-              <div class="toolbar">
-                <label class="muted"><input id="dedupe" type="checkbox" checked /> 去重</label>
-              </div>
             </section>
             <section>
               <div class="row">
