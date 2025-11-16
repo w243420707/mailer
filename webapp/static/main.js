@@ -14,7 +14,6 @@ async function fetchConfig() {
   setVal('postal.key', j?.postal?.key);
   setVal('postal.from_name', j?.postal?.from_name);
   setVal('postal.from_email', j?.postal?.from_email);
-  setVal('setting.excel_file', j?.setting?.excel_file);
   setVal('setting.subject', j?.setting?.subject);
   setVal('setting.limit', j?.setting?.limit);
   setVal('setting.proxy', j?.setting?.proxy);
@@ -69,22 +68,7 @@ get('save').onclick = async () => {
   }
 };
 
-get('upload').onclick = async () => {
-  const f = get('file').files[0];
-  if (!f) return alert('请选择文件');
-  const fd = new FormData();
-  fd.append('file', f);
-  const r = await fetch('/api/upload', { method: 'POST', body: fd });
-  const j = await r.json();
-  alert(JSON.stringify(j));
-  fetchConfig();
-};
-
-get('send').onclick = async () => {
-  const r = await fetch('/api/send', { method: 'POST' });
-  const j = await r.json();
-  alert(JSON.stringify(j));
-};
+// 已移除上传/Excel发送相关功能
 
 get('last').onclick = async () => {
   const r = await fetch('/api/last_result');

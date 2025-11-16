@@ -7,6 +7,7 @@ import toml
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 CONFIG_PATH = os.path.join(PROJECT_ROOT, "config.toml")
+RECIP_PATH = os.path.join(PROJECT_ROOT, "recipients.txt")
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
@@ -72,21 +73,8 @@ def api_post_config():
 
 @app.route("/api/upload", methods=["POST"])
 def api_upload():
-    # 上传 Excel 文件并更新配置中的 excel_file 路径
-    if "file" not in request.files:
-        return jsonify({"ok": False, "error": "no file"}), 400
-    f = request.files["file"]
-    filename = f.filename or "upload.xlsx"
-    save_path = os.path.join(PROJECT_ROOT, filename)
-    f.save(save_path)
-
-    cfg = load_config()
-    if "setting" not in cfg:
-        cfg["setting"] = {}
-    cfg["setting"]["excel_file"] = filename
-    save_config(cfg)
-
-    return jsonify({"ok": True, "filename": filename})
+    # 已移除：不再支持上传 Excel
+    return jsonify({"ok": False, "error": "Excel 上传功能已禁用"}), 410
 
 
 @app.route("/api/send", methods=["POST"])
@@ -146,6 +134,40 @@ def _normalize_email_list(raw: str):
     return parts
 
 
+def _read_recipients_file():
+    # 返回 (列表顺序, 小写去重字典)
+    existing = []
+    if os.path.exists(RECIP_PATH):
+        with open(RECIP_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                e = line.strip()
+                if e and "@" in e:
+                    existing.append(e)
+    seen = {}
+    ordered = []
+    for e in existing:
+        k = e.strip().lower()
+        if k not in seen:
+            seen[k] = e
+            ordered.append(e)
+    return ordered, seen
+
+
+def _merge_and_save_recipients(new_emails):
+    ordered, seen = _read_recipients_file()
+    appended = 0
+    for e in new_emails:
+        k = e.strip().lower()
+        if k not in seen:
+            seen[k] = e
+            ordered.append(e)
+            appended += 1
+    with open(RECIP_PATH, "w", encoding="utf-8") as f:
+        for e in ordered:
+            f.write(e + "\n")
+    return {"total": len(ordered), "appended": appended}
+
+
 @app.route("/api/send_list", methods=["POST"])
 def api_send_list():
     from send_email_postal_excel import init_session, send_mail
@@ -174,6 +196,9 @@ def api_send_list():
                 seen.add(k)
                 uniq.append(e)
         emails = uniq
+
+    # 合并并保存到 recipients.txt（累积且去重）
+    merge_info = _merge_and_save_recipients(emails)
 
     core = _load_core_settings()
     subject = subject_override or core.get("subject") or ""
@@ -214,7 +239,13 @@ def api_send_list():
 
     t = threading.Thread(target=worker_list, args=(emails,), daemon=True)
     t.start()
-    return jsonify({"ok": True, "task": "send_list", "recipients": len(emails)})
+    return jsonify({
+        "ok": True,
+        "task": "send_list",
+        "recipients": len(emails),
+        "saved_total": merge_info.get("total"),
+        "saved_appended": merge_info.get("appended")
+    })
 
 
 if __name__ == "__main__":

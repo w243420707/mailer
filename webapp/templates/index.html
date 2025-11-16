@@ -21,18 +21,11 @@
             API Key:
             <input id="postal.key" type="password" placeholder="API Key" style="width:100%" />
           </label>
-          <br/>
-          <label>
-            发件人名称(from_name):
-            <input id="postal.from_name" type="text" style="width:100%" />
-          </label>
-          <br/>
-          <label>
-            发件人邮箱(from_email):
-            <input id="postal.from_email" type="email" style="width:100%" />
-          </label>
-        </fieldset>
-
+          <div>
+            <h3>发送结果</h3>
+            <button id="last">获取上次结果</button>
+            <pre id="result"></pre>
+          </div>
         <fieldset>
           <legend>Setting</legend>
           <label>
@@ -43,11 +36,6 @@
           <label>
             主题(subject):
             <input id="setting.subject" type="text" style="width:100%" />
-          </label>
-          <br/>
-          <label>
-            每分钟限速(limit):
-            <input id="setting.limit" type="number" min="0" step="1" style="width:200px" />
           </label>
           <br/>
           <label>

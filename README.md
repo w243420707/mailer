@@ -26,8 +26,8 @@ Web 界面:
 - GET `/`：管理页面
 - GET `/api/config`：获取配置
 - POST `/api/config`：保存配置（JSON 格式）
-- POST `/api/upload`：上传 Excel 文件（字段 `file`）并自动更新 `excel_file`
-- POST `/api/send`：异步触发发送（后台线程）
+- （已移除）`/api/upload`：Excel 上传功能已禁用，改为粘贴列表累积到 `recipients.txt`
+- （不推荐）`/api/send`：基于 Excel 的发送入口仍保留后端兼容，但前端已隐藏。
 - GET `/api/last_result`：查询上次发送结果
  - POST `/api/send_list`：从粘贴的邮箱列表发送（支持去重；参数：`recipients` 文本、`dedupe` 布尔、`subject` 可选、`html_body` 必填）
  
@@ -57,11 +57,16 @@ services:
 
 未设置则使用默认 `admin/admin`。
 
-## 直接粘贴邮箱列表发送
+## 直接粘贴邮箱列表发送（自动累积保存）
 
 在“粘贴收件人列表发送”区域：
 - 粘贴邮箱（支持换行/逗号/分号分隔）
 - 勾选“去重”（按邮箱小写去重，保留顺序）
 - 可填“主题”（留空使用配置中的 `setting.subject`）
 - 填写“邮件内容（HTML）”，所有收件人将收到同一内容
-- 点击“发送粘贴列表（后台）”，可在“获取上次结果”查看统计
+- 点击“发送粘贴列表（后台）”，会先将收件人追加到项目根目录的 `recipients.txt`（按小写去重、保留顺序），然后仅对本次提交的收件人执行发送；可在“获取上次结果”查看统计
+
+### recipients.txt 说明
+- 路径：项目根目录 `recipients.txt`
+- 格式：每行一个邮箱
+- 行为：每次提交会读取现有列表，与新提交列表合并去重后整体重写保存，实现长期累积
