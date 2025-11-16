@@ -29,5 +29,34 @@ Web 界面:
 - POST `/api/upload`：上传 Excel 文件（字段 `file`）并自动更新 `excel_file`
 - POST `/api/send`：异步触发发送（后台线程）
 - GET `/api/last_result`：查询上次发送结果
+ - POST `/api/send_list`：从粘贴的邮箱列表发送（支持去重；参数：`recipients` 文本、`dedupe` 布尔、`subject` 可选、`html_body` 必填）
  
 提示：脚本会自动安装 Docker 与 docker compose 插件（或检测已安装的 docker-compose），开放 6253 端口（若检测到 UFW/firewalld），然后将仓库克隆到 `/opt/mailer` 并启动。
+
+## 基础认证（推荐开启）
+
+为防止未授权访问，可通过环境变量启用 HTTP Basic Auth：
+
+- `MAILER_AUTH_USER`: 用户名（非空即启用认证）
+- `MAILER_AUTH_PASS`: 密码
+
+示例（docker-compose 覆盖）:
+
+```yaml
+services:
+	mailer:
+		environment:
+			- MAILER_AUTH_USER=admin
+			- MAILER_AUTH_PASS=change-me
+```
+
+未设置或留空则不启用认证。
+
+## 直接粘贴邮箱列表发送
+
+在“粘贴收件人列表发送”区域：
+- 粘贴邮箱（支持换行/逗号/分号分隔）
+- 勾选“去重”（按邮箱小写去重，保留顺序）
+- 可填“主题”（留空使用配置中的 `setting.subject`）
+- 填写“邮件内容（HTML）”，所有收件人将收到同一内容
+- 点击“发送粘贴列表（后台）”，可在“获取上次结果”查看统计

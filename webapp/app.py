@@ -1,12 +1,42 @@
 import os
 import threading
-from flask import Flask, jsonify, request, render_template, send_from_directory
+import base64
+from functools import wraps
+from flask import Flask, jsonify, request, render_template, send_from_directory, Response
 import toml
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 CONFIG_PATH = os.path.join(PROJECT_ROOT, "config.toml")
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+
+AUTH_USER = os.getenv("MAILER_AUTH_USER", "").strip()
+AUTH_PASS = os.getenv("MAILER_AUTH_PASS", "").strip()
+
+
+def check_auth(auth_header: str) -> bool:
+    try:
+        if not auth_header or not auth_header.lower().startswith("basic "):
+            return False
+        b64 = auth_header.split(" ", 1)[1]
+        raw = base64.b64decode(b64).decode("utf-8", errors="ignore")
+        user, pwd = raw.split(":", 1)
+        return user == AUTH_USER and pwd == AUTH_PASS
+    except Exception:
+        return False
+
+
+@app.before_request
+def require_basic_auth():
+    # 若未配置用户名或密码，则不启用认证
+    if not AUTH_USER or not AUTH_PASS:
+        return None
+    auth = request.headers.get("Authorization")
+    if not check_auth(auth):
+        return Response(
+            status=401,
+            headers={"WWW-Authenticate": 'Basic realm="Mailer"'},
+        )
 
 
 def load_config():
@@ -67,6 +97,8 @@ def api_send():
     def worker():
         # send_from_config 会返回结果字典
         res = send_from_config(CONFIG_PATH, confirm=False)
+        if isinstance(res, dict):
+            res["mode"] = "excel"
         # 将结果写入文件供前端查询（简单实现）
         with open(os.path.join(PROJECT_ROOT, "last_send_result.json"), "w", encoding="utf-8") as f:
             import json
@@ -86,6 +118,103 @@ def api_last_result():
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return jsonify(data)
+
+
+def _load_core_settings():
+    cfg = load_config()
+    postal = cfg.get("postal", {})
+    setting = cfg.get("setting", {})
+    return {
+        "server": postal.get("server", ""),
+        "key": postal.get("key", ""),
+        "from_name": postal.get("from_name", ""),
+        "from_email": postal.get("from_email", ""),
+        "subject": setting.get("subject", ""),
+        "limit": setting.get("limit", 0),
+        "proxy": setting.get("proxy", ""),
+    }
+
+
+def _normalize_email_list(raw: str):
+    import re
+    if not raw:
+        return []
+    # 支持换行/逗号/分号分隔
+    parts = re.split(r"[\s,;]+", raw.strip())
+    # 过滤空串
+    parts = [p.strip() for p in parts if p and "@" in p]
+    return parts
+
+
+@app.route("/api/send_list", methods=["POST"])
+def api_send_list():
+    from send_email_postal_excel import init_session, send_mail
+    payload = request.get_json(silent=True) or {}
+    recipients_text = payload.get("recipients", "")
+    dedupe = bool(payload.get("dedupe", True))
+    subject_override = (payload.get("subject") or "").strip()
+    html_body = (payload.get("html_body") or "").strip()
+
+    if not recipients_text:
+        return jsonify({"ok": False, "error": "收件人列表不能为空"}), 400
+    if not html_body:
+        return jsonify({"ok": False, "error": "邮件内容(html_body)不能为空"}), 400
+
+    emails = _normalize_email_list(recipients_text)
+    if not emails:
+        return jsonify({"ok": False, "error": "未解析到有效邮箱"}), 400
+
+    # 去重（保序）
+    if dedupe:
+        seen = set()
+        uniq = []
+        for e in emails:
+            k = e.strip().lower()
+            if k not in seen:
+                seen.add(k)
+                uniq.append(e)
+        emails = uniq
+
+    core = _load_core_settings()
+    subject = subject_override or core.get("subject") or ""
+    if not subject:
+        return jsonify({"ok": False, "error": "主题(subject)不能为空（配置或参数中提供）"}), 400
+
+    delay = 0
+    try:
+        limit = int(core.get("limit") or 0)
+        delay = (60 / limit) if limit > 0 else 0
+    except Exception:
+        delay = 0
+
+    def worker_list(to_list):
+        session = init_session(core.get("proxy") or "")
+        success = 0
+        total = len(to_list)
+        for i, addr in enumerate(to_list, start=1):
+            ok = send_mail(
+                session,
+                core.get("server"),
+                core.get("key"),
+                core.get("from_name"),
+                core.get("from_email"),
+                addr,
+                subject,
+                html_body,
+            )
+            if ok:
+                success += 1
+            if delay > 0 and i < total:
+                import time
+                time.sleep(delay)
+        result = {"ok": True, "mode": "list", "success": success, "total": total}
+        with open(os.path.join(PROJECT_ROOT, "last_send_result.json"), "w", encoding="utf-8") as f:
+            import json
+            json.dump(result, f, ensure_ascii=False)
+
+    t = threading.Thread(target=worker_list, args=(emails,), daemon=True)
+    t.start()
+    return jsonify({"ok": True, "task": "send_list", "recipients": len(emails)})
 
 
 if __name__ == "__main__":

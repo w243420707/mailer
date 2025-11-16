@@ -78,6 +78,31 @@
     </div>
 
     <hr/>
+    <div>
+      <h3>粘贴收件人列表发送（支持去重）</h3>
+      <div style="max-width: 800px;">
+        <label>
+          收件人（换行/逗号/分号分隔）
+          <textarea id="recipients_text" rows="8" style="width:100%;" placeholder="a@example.com\nb@example.com\nc@example.com"></textarea>
+        </label>
+        <div style="margin:6px 0;">
+          <label><input id="dedupe" type="checkbox" checked /> 去重</label>
+        </div>
+        <label>
+          主题（留空则使用配置中的 subject）
+          <input id="subject_override" type="text" style="width:100%;" />
+        </label>
+        <label>
+          邮件内容（HTML）
+          <textarea id="body_html" rows="10" style="width:100%;" placeholder="<p>您好...</p>"></textarea>
+        </label>
+        <div style="margin-top:8px;">
+          <button id="sendList">发送粘贴列表（后台）</button>
+        </div>
+      </div>
+    </div>
+
+    <hr/>
     <details>
       <summary>查看原始配置 JSON</summary>
       <pre id="config">加载中...</pre>

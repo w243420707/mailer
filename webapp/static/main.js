@@ -94,3 +94,21 @@ get('last').onclick = async () => {
 };
 
 fetchConfig();
+
+// 发送粘贴列表
+get('sendList').onclick = async () => {
+  const recipients = get('recipients_text').value || '';
+  const dedupe = get('dedupe').checked;
+  const subject = get('subject_override').value || '';
+  const html_body = get('body_html').value || '';
+  if (!recipients.trim()) return alert('请粘贴至少一个邮箱');
+  if (!html_body.trim()) return alert('请填写邮件内容');
+  const r = await fetch('/api/send_list', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ recipients, dedupe, subject, html_body })
+  });
+  const j = await r.json();
+  if (!j.ok) return alert('发送失败: ' + (j.error || '未知错误'));
+  alert('已触发后台发送，去重后共 ' + j.recipients + ' 个收件人');
+};
