@@ -37,6 +37,10 @@ def require_basic_auth():
     # 若未配置用户名或密码，则不启用认证
     if not AUTH_USER or not AUTH_PASS:
         return None
+    # 放行静态资源与站点图标，避免样式因未携带认证头而加载失败
+    p = request.path or ""
+    if p.startswith("/static/") or p == "/favicon.ico":
+        return None
     auth = request.headers.get("Authorization")
     if not check_auth(auth):
         return Response(
