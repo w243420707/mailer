@@ -1,0 +1,17 @@
+[postal]
+# Postal面板地址，结尾不需要斜杠
+server = "https://panel.sidecloud.cc/"
+# Postal API Credential
+key = "xbrzNI1yR4JPiva5W2LJSEmr"
+# 发件人名称
+from_name = "补偿通知"
+# 发件人邮箱地址
+from_email = "bztz@mail.skylumo.com"
+
+[setting]
+excel_file = "1.xlsx"
+# 邮件主题
+subject = "机场合并补偿通知-包含补偿礼品卡，如果您不知道这是什么请查看机场官网公告"
+limit = 5
+# 代理设置，格式为http://ip:port，留空表示不使用代理
+proxy = ""
