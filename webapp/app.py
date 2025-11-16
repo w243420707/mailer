@@ -116,12 +116,22 @@ def _load_core_settings():
     cfg = load_config()
     postal = cfg.get("postal", {})
     setting = cfg.get("setting", {})
+    subjects = setting.get("subjects") or []
+    if isinstance(subjects, str):
+        subjects = [subjects]
+    # 清洗为字符串列表
+    subjects = [str(s).strip() for s in subjects if str(s).strip()]
+    single_subject = setting.get("subject", "")
+    if not subjects and single_subject:
+        subjects = [single_subject]
+
     return {
         "server": postal.get("server", ""),
         "key": postal.get("key", ""),
         "from_name": postal.get("from_name", ""),
         "from_email": postal.get("from_email", ""),
-        "subject": setting.get("subject", ""),
+        "subject": single_subject,
+        "subjects": subjects,
         "limit": setting.get("limit", 0),
         "proxy": setting.get("proxy", ""),
     }
@@ -247,9 +257,12 @@ def api_send_list():
     merge_info = _merge_and_save_recipients(emails)
 
     core = _load_core_settings()
-    subject = subject_override or core.get("subject") or ""
-    if not subject:
-        return jsonify({"ok": False, "error": "主题(subject)不能为空（配置或参数中提供）"}), 400
+    subjects = core.get("subjects") or []
+    # 若前端传了 subject_override 则全程使用该主题；否则从 subjects 轮询
+    if subject_override:
+        subjects = [subject_override]
+    if not subjects:
+        return jsonify({"ok": False, "error": "主题(subjects)不能为空（在设置中至少提供一个或本次传入 subject）"}), 400
 
     delay = 0
     try:
@@ -261,6 +274,11 @@ def api_send_list():
     # 保存邮件内容模板
     _save_body_template(html_body)
 
+    def pick_subject(i: int):
+        if not subjects:
+            return ""
+        return subjects[(i - 1) % len(subjects)]
+
     def worker_list(to_list):
         session = init_session(core.get("proxy") or "")
         success = 0
@@ -268,6 +286,7 @@ def api_send_list():
         _update_progress({"mode": "list", "status": "running", "sent": 0, "success": 0, "total": total})
         for i, addr in enumerate(to_list, start=1):
             rendered = _render_body(html_body, addr, i)
+            subject_now = pick_subject(i)
             ok = send_mail(
                 session,
                 core.get("server"),
@@ -275,7 +294,7 @@ def api_send_list():
                 core.get("from_name"),
                 core.get("from_email"),
                 addr,
-                subject,
+                subject_now,
                 rendered,
             )
             if ok:
@@ -324,9 +343,11 @@ def api_send_all():
     subject_override = (payload.get("subject") or "").strip()
     html_body = (payload.get("html_body") or "").strip()
     core = _load_core_settings()
-    subject = subject_override or core.get("subject") or ""
-    if not subject:
-        return jsonify({"ok": False, "error": "主题(subject)不能为空（配置或参数中提供）"}), 400
+    subjects = core.get("subjects") or []
+    if subject_override:
+        subjects = [subject_override]
+    if not subjects:
+        return jsonify({"ok": False, "error": "主题(subjects)不能为空（设置或参数中至少一个）"}), 400
     if not html_body and not os.path.exists(BODY_PATH):
         return jsonify({"ok": False, "error": "请提供 html_body 或先保存模板内容"}), 400
     if not html_body:
@@ -345,6 +366,11 @@ def api_send_all():
     except Exception:
         delay = 0
 
+    def pick_subject(i: int):
+        if not subjects:
+            return ""
+        return subjects[(i - 1) % len(subjects)]
+
     def worker_all():
         session = init_session(core.get("proxy") or "")
         success = 0
@@ -352,6 +378,7 @@ def api_send_all():
         _update_progress({"mode": "all", "status": "running", "sent": 0, "success": 0, "total": total})
         for i, addr in enumerate(to_list, start=1):
             rendered = _render_body(html_body, addr, i)
+            subject_now = pick_subject(i)
             ok = send_mail(
                 session,
                 core.get("server"),
@@ -359,7 +386,7 @@ def api_send_all():
                 core.get("from_name"),
                 core.get("from_email"),
                 addr,
-                subject,
+                subject_now,
                 rendered,
             )
             if ok:

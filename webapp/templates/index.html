@@ -21,22 +21,16 @@
             API Key:
             <input id="postal.key" type="password" placeholder="API Key" style="width:100%" />
           </label>
-          <div>
-            <h3>发送结果</h3>
-            <button id="last">获取上次结果</button>
-            <pre id="result"></pre>
-          </div>
         <fieldset>
           <legend>Setting</legend>
-          <label>
-            Excel 文件(excel_file):
-            <input id="setting.excel_file" type="text" style="width:100%" disabled />
-          </label>
-          <br/>
-          <label>
-            主题(subject):
-            <input id="setting.subject" type="text" style="width:100%" />
-          </label>
+          <div>
+            <div style="margin-bottom:6px;">主题（最多 5 个，发送时轮询使用）</div>
+            <label>主题1：<input id="setting.subject1" type="text" style="width:100%" /></label>
+            <label>主题2：<input id="setting.subject2" type="text" style="width:100%" /></label>
+            <label>主题3：<input id="setting.subject3" type="text" style="width:100%" /></label>
+            <label>主题4：<input id="setting.subject4" type="text" style="width:100%" /></label>
+            <label>主题5：<input id="setting.subject5" type="text" style="width:100%" /></label>
+          </div>
           <br/>
           <label>
             代理(proxy):
@@ -53,14 +47,7 @@
     </div>
 
     <div>
-      <h3>上传 Excel</h3>
-      <input type="file" id="file" />
-      <button id="upload">上传</button>
-    </div>
-
-    <div>
-      <h3>发送控制</h3>
-      <button id="send">开始发送（后台）</button>
+      <h3>发送结果</h3>
       <button id="last">获取上次结果</button>
       <pre id="result"></pre>
     </div>

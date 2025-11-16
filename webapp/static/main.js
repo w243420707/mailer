@@ -14,7 +14,12 @@ async function fetchConfig() {
   setVal('postal.key', j?.postal?.key);
   setVal('postal.from_name', j?.postal?.from_name);
   setVal('postal.from_email', j?.postal?.from_email);
-  setVal('setting.subject', j?.setting?.subject);
+  const subs = (j?.setting?.subjects || []).filter(x => (x ?? '').toString().trim() !== '');
+  setVal('setting.subject1', subs[0] || (j?.setting?.subject || ''));
+  setVal('setting.subject2', subs[1] || '');
+  setVal('setting.subject3', subs[2] || '');
+  setVal('setting.subject4', subs[3] || '');
+  setVal('setting.subject5', subs[4] || '');
   setVal('setting.limit', j?.setting?.limit);
   setVal('setting.proxy', j?.setting?.proxy);
   // 原始 JSON 视图
@@ -35,6 +40,13 @@ get('save').onclick = async () => {
   }
 
   // 组装完整配置对象，避免丢字段
+  const subjects = [
+    getVal('setting.subject1').trim(),
+    getVal('setting.subject2').trim(),
+    getVal('setting.subject3').trim(),
+    getVal('setting.subject4').trim(),
+    getVal('setting.subject5').trim(),
+  ].filter(x => !!x);
   const payload = {
     postal: {
       server,
@@ -43,8 +55,8 @@ get('save').onclick = async () => {
       from_email
     },
     setting: {
-      excel_file: getVal('setting.excel_file'),
-      subject: getVal('setting.subject'),
+      subjects,
+      subject: subjects[0] || '',
       limit: Number(getVal('setting.limit') || 0),
       proxy: getVal('setting.proxy')
     }
