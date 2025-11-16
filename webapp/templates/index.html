@@ -83,14 +83,35 @@
         <label>
           邮件内容（HTML）
           <textarea id="body_html" rows="10" style="width:100%;" placeholder="<p>您好...</p>"></textarea>
+          <small>支持占位：{{email}}、{{index}}、{{domain}}</small>
         </label>
         <div style="margin-top:8px;">
           <button id="sendList">发送粘贴列表（后台）</button>
+          <button id="saveOnly" type="button">仅保存不发送</button>
+          <button id="sendAll" type="button">对已累积收件人发送</button>
         </div>
       </div>
     </div>
 
     <hr/>
+    <div>
+      <h3>收件人列表（recipients.txt）</h3>
+      <div>
+        <span>总数：<b id="recTotal">0</b></span>
+        <button id="expRec">导出</button>
+        <button id="clearRec">清空</button>
+      </div>
+      <pre id="recPreview" style="max-height: 200px; overflow:auto; background:#f7f7f7; padding:8px;"></pre>
+    </div>
+
+    <hr/>
+    <div>
+      <h3>发送进度</h3>
+      <div style="width:100%;max-width:600px;background:#eee;height:16px;border-radius:8px;overflow:hidden;">
+        <div id="progBar" style="width:0%;height:100%;background:#4caf50;"></div>
+      </div>
+      <div id="progText" style="margin-top:6px;color:#333;">状态：idle</div>
+    </div>
     <details>
       <summary>查看原始配置 JSON</summary>
       <pre id="config">加载中...</pre>
