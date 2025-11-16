@@ -10,15 +10,16 @@
     <div class="container">
       <div class="header">
         <div class="title">Mailer 配置管理</div>
-        <div class="subtitle">轻量、可视化、可粘贴发送</div>
+        <div class="subtitle">批量发送 · 模板变量 · 进度跟踪</div>
       </div>
 
-      <div class="grid">
-        <div class="col-6">
-          <div class="card">
-            <h3>编辑配置</h3>
+      <div class="layout-grid">
+        <!-- 左列：配置 / 粘贴发送 -->
+        <div class="stack">
+          <div class="card" id="card-config">
+            <h3>连接与主题</h3>
             <form id="cfgForm" onsubmit="return false;">
-              <fieldset>
+              <section>
                 <div class="row">
                   <label class="muted">面板地址(server)</label>
                   <input id="postal.server" class="input" type="text" placeholder="https://your-postal" />
@@ -27,97 +28,92 @@
                   <label class="muted">API Key</label>
                   <input id="postal.key" class="input" type="password" placeholder="API Key" />
                 </div>
-              </fieldset>
-
-              <fieldset>
-                <div class="section-title">
-                  <h4 class="muted" style="margin:0;">主题（最多 5 个，发送时轮询使用）</h4>
-                </div>
-                <div class="subjects">
+              </section>
+              <section>
+                <small class="muted">填写 1~5 个主题，发送时轮询；可在下方临时覆盖。</small>
+                <div class="subjects" style="margin-top:10px;">
                   <input id="setting.subject1" class="input" type="text" placeholder="主题1" />
                   <input id="setting.subject2" class="input" type="text" placeholder="主题2" />
                   <input id="setting.subject3" class="input" type="text" placeholder="主题3" />
                   <input id="setting.subject4" class="input" type="text" placeholder="主题4" />
                   <input id="setting.subject5" class="input" type="text" placeholder="主题5" />
                 </div>
-                <div class="row" style="margin-top:10px;">
+                <div class="row" style="margin-top:14px;">
                   <label class="muted">代理(proxy)</label>
                   <input id="setting.proxy" class="input" type="text" placeholder="http://ip:port" />
                 </div>
-              </fieldset>
-
-              <div class="toolbar" style="margin-top:10px;">
-                <button id="save" class="btn btn-primary" type="button">保存配置</button>
-                <button id="refresh" class="btn btn-ghost" type="button">刷新配置</button>
-                <span id="saveMsg" class="muted"></span>
-              </div>
+              </section>
+              <section>
+                <div class="toolbar">
+                  <button id="save" class="btn btn-primary" type="button">保存配置</button>
+                  <button id="refresh" class="btn btn-ghost" type="button">刷新</button>
+                  <span id="saveMsg" class="muted"></span>
+                </div>
+              </section>
             </form>
+          </div>
+
+          <div class="card" id="card-send-list">
+            <h3>粘贴发送（支持去重）</h3>
+            <section>
+              <div class="row">
+                <label class="muted">收件人</label>
+                <textarea id="recipients_text" class="textarea" placeholder="a@example.com\nb@example.com\n..."></textarea>
+              </div>
+              <div class="toolbar">
+                <label class="muted"><input id="dedupe" type="checkbox" checked /> 去重</label>
+              </div>
+            </section>
+            <section>
+              <div class="row">
+                <label class="muted">主题覆盖（留空轮询）</label>
+                <input id="subject_override" class="input" type="text" placeholder="本次统一主题，可留空" />
+              </div>
+              <div class="row">
+                <label class="muted">邮件内容（HTML）</label>
+                <textarea id="body_html" class="textarea" placeholder="<p>您好...</p>\n<!-- 支持 {{email}} / {{index}} / {{domain}} -->"></textarea>
+              </div>
+            </section>
+            <section>
+              <div class="toolbar">
+                <button id="sendList" class="btn btn-primary" type="button">发送本次列表</button>
+                <button id="saveOnly" class="btn btn-ghost" type="button">仅保存</button>
+                <button id="sendAll" class="btn btn-success" type="button">发送已累积</button>
+              </div>
+            </section>
           </div>
         </div>
 
-        <div class="col-6">
-          <div class="card">
+        <!-- 右列：结果 / 进度 / 收件人 / 原始配置 -->
+        <div class="stack">
+          <div class="card" id="card-result">
             <h3>发送结果</h3>
             <div class="toolbar">
               <button id="last" class="btn btn-ghost" type="button">获取上次结果</button>
             </div>
-            <pre id="result" style="margin-top:10px;"></pre>
+            <pre id="result" style="margin-top:12px; max-height:240px;"></pre>
           </div>
-        </div>
-
-        <div class="col-12">
-          <div class="card">
-            <h3>粘贴收件人列表发送（支持去重）</h3>
-            <div class="row">
-              <label class="muted">收件人</label>
-              <textarea id="recipients_text" class="textarea" placeholder="a@example.com\nb@example.com\nc@example.com"></textarea>
-            </div>
-            <div class="toolbar">
-              <label class="muted"><input id="dedupe" type="checkbox" checked /> 去重</label>
-            </div>
-            <div class="row">
-              <label class="muted">主题覆盖（可留空）</label>
-              <input id="subject_override" class="input" type="text" placeholder="本次统一主题（留空则按上面 1-5 轮询）" />
-            </div>
-            <div class="row">
-              <label class="muted">邮件内容（HTML）</label>
-              <textarea id="body_html" class="textarea" placeholder="<p>您好...</p>\n<!-- 支持 {{email}} / {{index}} / {{domain}} 占位 -->"></textarea>
-            </div>
-            <div class="toolbar">
-              <button id="sendList" class="btn btn-primary" type="button">发送粘贴列表（后台）</button>
-              <button id="saveOnly" class="btn btn-ghost" type="button">仅保存不发送</button>
-              <button id="sendAll" class="btn btn-success" type="button">对已累积收件人发送</button>
-            </div>
+          <div class="card" id="card-progress">
+            <h3>发送进度</h3>
+            <div class="progress"><div id="progBar" class="bar"></div></div>
+            <div id="progText" class="muted" style="margin-top:10px;">状态：idle</div>
           </div>
-        </div>
-
-        <div class="col-6">
-          <div class="card">
-            <h3>收件人列表（recipients.txt）</h3>
-            <div class="toolbar">
-              <span>总数：<b id="recTotal">0</b></span>
+          <div class="card" id="card-recipients">
+            <h3>收件人列表 <span class="badge" id="recTotal">0</span></h3>
+            <div class="toolbar" style="margin-bottom:8px;">
               <button id="expRec" class="btn btn-ghost" type="button">导出</button>
               <button id="clearRec" class="btn btn-danger" type="button">清空</button>
             </div>
-            <pre id="recPreview" style="margin-top:10px; max-height:220px;"></pre>
+            <pre id="recPreview" style="max-height:220px;"></pre>
           </div>
-        </div>
-
-        <div class="col-6">
-          <div class="card">
-            <h3>发送进度</h3>
-            <div class="progress"><div id="progBar" class="bar"></div></div>
-            <div id="progText" class="muted" style="margin-top:8px;">状态：idle</div>
-          </div>
-        </div>
-
-        <div class="col-12">
-          <div class="card">
-            <details>
-              <summary>查看原始配置 JSON</summary>
-              <pre id="config" style="margin-top:8px;">加载中...</pre>
+          <div class="card" id="card-config-json">
+            <h3>原始配置 JSON</h3>
+            <details open>
+              <summary class="muted" style="cursor:pointer;">折叠/展开</summary>
+              <pre id="config" style="margin-top:12px; max-height:260px;"></pre>
             </details>
           </div>
+          <div class="footer-note">Mailer UI · 简化批量发送流程</div>
         </div>
       </div>
     </div>
