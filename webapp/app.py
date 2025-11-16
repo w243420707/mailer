@@ -3,6 +3,7 @@ import threading
 import base64
 import random
 import time
+import secrets
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, send_from_directory, Response
 import toml
@@ -221,6 +222,9 @@ def _render_body(template_html: str, email: str, index: int):
         .replace("{{index}}", str(index))
         .replace("{{domain}}", domain)
     )
+    # 附加不可见追踪行：64位随机码 + 时间戳（HTML 注释，不被展示）
+    trace = f"{secrets.token_hex(8)}-{int(time.time())}"
+    out = f"{out}\n<!-- trace:{trace} -->"
     return out
 
 

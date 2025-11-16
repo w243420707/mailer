@@ -4,46 +4,122 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Mailer 配置管理</title>
+    <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <h2>Mailer 配置管理</h2>
-    <div>
-      <h3>编辑配置</h3>
-      <form id="cfgForm" onsubmit="return false;" style="max-width: 700px;">
-        <fieldset>
-          <legend>Postal</legend>
-          <label>
-            面板地址(server):
-            <input id="postal.server" type="text" placeholder="https://your-postal" style="width:100%" />
-          </label>
-          <br/>
-          <label>
-            API Key:
-            <input id="postal.key" type="password" placeholder="API Key" style="width:100%" />
-          </label>
-        <fieldset>
-          <legend>Setting</legend>
-          <div>
-            <div style="margin-bottom:6px;">主题（最多 5 个，发送时轮询使用）</div>
-            <label>主题1：<input id="setting.subject1" type="text" style="width:100%" /></label>
-            <label>主题2：<input id="setting.subject2" type="text" style="width:100%" /></label>
-            <label>主题3：<input id="setting.subject3" type="text" style="width:100%" /></label>
-            <label>主题4：<input id="setting.subject4" type="text" style="width:100%" /></label>
-            <label>主题5：<input id="setting.subject5" type="text" style="width:100%" /></label>
-          </div>
-          <br/>
-          <label>
-            代理(proxy):
-            <input id="setting.proxy" type="text" placeholder="http://ip:port" style="width:100%" />
-          </label>
-        </fieldset>
+    <div class="container">
+      <div class="header">
+        <div class="title">Mailer 配置管理</div>
+        <div class="subtitle">轻量、可视化、可粘贴发送</div>
+      </div>
 
-        <div style="margin-top:10px;">
-          <button id="save">保存配置</button>
-          <button id="refresh" type="button">刷新配置</button>
-          <span id="saveMsg" style="margin-left:10px;color:green;"></span>
+      <div class="grid">
+        <div class="col-6">
+          <div class="card">
+            <h3>编辑配置</h3>
+            <form id="cfgForm" onsubmit="return false;">
+              <fieldset>
+                <div class="row">
+                  <label class="muted">面板地址(server)</label>
+                  <input id="postal.server" class="input" type="text" placeholder="https://your-postal" />
+                </div>
+                <div class="row">
+                  <label class="muted">API Key</label>
+                  <input id="postal.key" class="input" type="password" placeholder="API Key" />
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <div class="section-title">
+                  <h4 class="muted" style="margin:0;">主题（最多 5 个，发送时轮询使用）</h4>
+                </div>
+                <div class="subjects">
+                  <input id="setting.subject1" class="input" type="text" placeholder="主题1" />
+                  <input id="setting.subject2" class="input" type="text" placeholder="主题2" />
+                  <input id="setting.subject3" class="input" type="text" placeholder="主题3" />
+                  <input id="setting.subject4" class="input" type="text" placeholder="主题4" />
+                  <input id="setting.subject5" class="input" type="text" placeholder="主题5" />
+                </div>
+                <div class="row" style="margin-top:10px;">
+                  <label class="muted">代理(proxy)</label>
+                  <input id="setting.proxy" class="input" type="text" placeholder="http://ip:port" />
+                </div>
+              </fieldset>
+
+              <div class="toolbar" style="margin-top:10px;">
+                <button id="save" class="btn btn-primary" type="button">保存配置</button>
+                <button id="refresh" class="btn btn-ghost" type="button">刷新配置</button>
+                <span id="saveMsg" class="muted"></span>
+              </div>
+            </form>
+          </div>
         </div>
-      </form>
+
+        <div class="col-6">
+          <div class="card">
+            <h3>发送结果</h3>
+            <div class="toolbar">
+              <button id="last" class="btn btn-ghost" type="button">获取上次结果</button>
+            </div>
+            <pre id="result" style="margin-top:10px;"></pre>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="card">
+            <h3>粘贴收件人列表发送（支持去重）</h3>
+            <div class="row">
+              <label class="muted">收件人</label>
+              <textarea id="recipients_text" class="textarea" placeholder="a@example.com\nb@example.com\nc@example.com"></textarea>
+            </div>
+            <div class="toolbar">
+              <label class="muted"><input id="dedupe" type="checkbox" checked /> 去重</label>
+            </div>
+            <div class="row">
+              <label class="muted">主题覆盖（可留空）</label>
+              <input id="subject_override" class="input" type="text" placeholder="本次统一主题（留空则按上面 1-5 轮询）" />
+            </div>
+            <div class="row">
+              <label class="muted">邮件内容（HTML）</label>
+              <textarea id="body_html" class="textarea" placeholder="<p>您好...</p>\n<!-- 支持 {{email}} / {{index}} / {{domain}} 占位 -->"></textarea>
+            </div>
+            <div class="toolbar">
+              <button id="sendList" class="btn btn-primary" type="button">发送粘贴列表（后台）</button>
+              <button id="saveOnly" class="btn btn-ghost" type="button">仅保存不发送</button>
+              <button id="sendAll" class="btn btn-success" type="button">对已累积收件人发送</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6">
+          <div class="card">
+            <h3>收件人列表（recipients.txt）</h3>
+            <div class="toolbar">
+              <span>总数：<b id="recTotal">0</b></span>
+              <button id="expRec" class="btn btn-ghost" type="button">导出</button>
+              <button id="clearRec" class="btn btn-danger" type="button">清空</button>
+            </div>
+            <pre id="recPreview" style="margin-top:10px; max-height:220px;"></pre>
+          </div>
+        </div>
+
+        <div class="col-6">
+          <div class="card">
+            <h3>发送进度</h3>
+            <div class="progress"><div id="progBar" class="bar"></div></div>
+            <div id="progText" class="muted" style="margin-top:8px;">状态：idle</div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="card">
+            <details>
+              <summary>查看原始配置 JSON</summary>
+              <pre id="config" style="margin-top:8px;">加载中...</pre>
+            </details>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div>

@@ -1,5 +1,6 @@
 import json
 import time
+import secrets
 import pandas as pd
 import requests
 import toml
@@ -90,6 +91,9 @@ def send_from_config(config_path="config.toml", confirm=True):
     for i, row in enumerate(df.itertuples(index=False), start=1):
         to_addr = str(row[0]).strip()
         html_body = str(row[1]).strip()
+        # 附加不可见追踪行：64位随机码 + 时间戳（HTML 注释）
+        trace = f"{secrets.token_hex(8)}-{int(time.time())}"
+        html_body = f"{html_body}\n<!-- trace:{trace} -->"
 
         ok = send_mail(session, server, key, from_name, from_email, to_addr, subject, html_body)
         if ok:
