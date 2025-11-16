@@ -1,0 +1,7 @@
+flask
+toml
+pandas
+requests
+tqdm
+openpyxl
+gunicorn

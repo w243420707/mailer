@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mailer 配置管理</title>
+  </head>
+  <body>
+    <h2>Mailer 配置管理</h2>
+    <div>
+      <h3>当前配置</h3>
+      <pre id="config">加载中...</pre>
+      <button id="refresh">刷新配置</button>
+    </div>
+
+    <div>
+      <h3>上传 Excel</h3>
+      <input type="file" id="file" />
+      <button id="upload">上传</button>
+    </div>
+
+    <div>
+      <h3>发送控制</h3>
+      <button id="send">开始发送（后台）</button>
+      <button id="last">获取上次结果</button>
+      <pre id="result"></pre>
+    </div>
+
+    <script src="/static/main.js"></script>
+  </body>
+</html>

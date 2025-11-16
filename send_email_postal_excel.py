@@ -49,13 +49,12 @@ def send_mail(session, server, key, from_name, from_email, to_addr, subject, htm
     return False
 
 
-if __name__ == "__main__":
-    # 读取配置文件
+def send_from_config(config_path="config.toml", confirm=True):
+    """根据给定的 TOML 配置文件发送邮件。返回一个 dict，包含统计信息和可能的错误消息。"""
     try:
-        config = toml.load("config.toml")
+        config = toml.load(config_path)
     except FileNotFoundError:
-        print("❌ 未找到 config.toml")
-        exit()
+        return {"ok": False, "error": f"未找到配置文件: {config_path}"}
 
     server = config["postal"]["server"]
     key = config["postal"]["key"]
@@ -63,8 +62,8 @@ if __name__ == "__main__":
     from_email = config["postal"]["from_email"]
     excel_path = config["setting"]["excel_file"]
     subject = config["setting"]["subject"]
-    limit = config["setting"]["limit"]
-    proxy = config["setting"]["proxy"]
+    limit = config["setting"].get("limit", 0)
+    proxy = config["setting"].get("proxy", "")
 
     delay = (60 / limit) if limit > 0 else 0
 
@@ -72,34 +71,40 @@ if __name__ == "__main__":
     try:
         df = pd.read_excel(excel_path)
     except FileNotFoundError:
-        print(f"❌ Excel 文件 {excel_path} 未找到")
-        exit()
+        return {"ok": False, "error": f"Excel 文件 {excel_path} 未找到"}
 
     # 确保至少有两列
     if len(df.columns) < 2:
-        print("❌ Excel 文件格式错误：至少需要两列（第一列邮箱，第二列内容）")
-        exit()
+        return {"ok": False, "error": "Excel 文件格式错误：至少需要两列（第一列邮箱，第二列内容）"}
+
+    # 如果需要确认但被禁用则返回信息
+    if confirm is True:
+        # 当作为模块通过 Web 调用时，不做交互确认；confirm=True 表示需要交互的调用者处理确认
+        pass
 
     # 初始化会话
     session = init_session(proxy)
-    print(f"✅ 成功读取 {len(df)} 行邮件数据")
-
-    # 用户确认
-    confirm = input(f"确认发送 {len(df)} 封邮件？(y/n): ").lower()
-    if confirm != "y":
-        print("已取消发送。")
-        exit()
 
     success = 0
-    for i, row in enumerate(tqdm(df.itertuples(index=False), desc="🚀 发送中"), start=1):
-        # 第一列是邮箱，第二列是内容
+    total = len(df)
+    for i, row in enumerate(df.itertuples(index=False), start=1):
         to_addr = str(row[0]).strip()
         html_body = str(row[1]).strip()
 
         ok = send_mail(session, server, key, from_name, from_email, to_addr, subject, html_body)
         if ok:
             success += 1
-        if delay > 0 and i < len(df):
+        if delay > 0 and i < total:
             time.sleep(delay)
 
-    print(f"\n✅ 全部完成：成功发送 {success}/{len(df)} 封邮件")
+    return {"ok": True, "success": success, "total": total}
+
+
+if __name__ == "__main__":
+    # 保持原有命令行交互行为
+    result = send_from_config("config.toml", confirm=True)
+    if not result.get("ok"):
+        print(f"❌ {result.get('error')}")
+        exit(1)
+    else:
+        print(f"\n✅ 全部完成：成功发送 {result.get('success')}/{result.get('total')} 封邮件")

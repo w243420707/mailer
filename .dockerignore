@@ -1,0 +1,14 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+build/
+dist/
+.git
+.gitignore
+last_send_result.json
+*.xlsx
+*.xls
