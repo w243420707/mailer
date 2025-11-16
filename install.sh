@@ -2,6 +2,8 @@
 # One-click installer for Linux VPS (Ubuntu/Debian/CentOS)
 set -euo pipefail
 
+VERSION="2025-11-17.2"
+
 REPO_URL="https://github.com/w243420707/mailer.git"
 APP_DIR="/opt/mailer"
 PORT="6253"
@@ -101,6 +103,7 @@ compose_up(){
 }
 
 main(){
+  log "安装脚本版本: ${VERSION}"
   install_docker
   open_firewall
   sync_repo
