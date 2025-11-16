@@ -165,3 +165,16 @@ hr { border:none; border-top:1px solid var(--border); margin:32px 0; }
 .section-title { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 
 details summary { cursor: pointer; }
+
+/* 发送时间预估 */
+.estimator {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  background: rgba(255,255,255,0.02);
+  border-radius: var(--radius-md);
+}
+.est-row { display:flex; gap:6px; align-items:baseline; margin: 4px 0; }
+.est-key { color: var(--muted); min-width: 84px; }
+.est-val { color: var(--text); font-weight: 600; }
+.est-hint { color: var(--muted); margin-left: 6px; font-size: 12px; }

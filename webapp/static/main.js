@@ -26,6 +26,8 @@ async function fetchConfig() {
   // 原始 JSON 视图
   const pre = get('config');
   if (pre) pre.textContent = JSON.stringify(j, null, 2);
+  // 更新一次预估
+  try { calcEstimate(); } catch(e) {}
 }
 
 get('refresh').onclick = fetchConfig;
@@ -156,6 +158,7 @@ async function refreshRecipientsInfo(){
   const j = await r.json();
   get('recTotal').textContent = j.total || 0;
   get('recPreview').textContent = (j.preview || []).join('\n');
+  try { calcEstimate(); } catch(e) {}
 }
 
 get('expRec').onclick = () => {
@@ -263,3 +266,107 @@ async function restoreBodyTemplate(){
     }
   } catch(e) {}
 }
+
+// ——— 发送时间预估 ———
+function format2(n){ return n < 10 ? '0' + n : '' + n; }
+function formatDateTime(d){
+  if (!(d instanceof Date)) return '—';
+  const y = d.getFullYear();
+  const m = format2(d.getMonth()+1);
+  const dd = format2(d.getDate());
+  const hh = format2(d.getHours());
+  const mm = format2(d.getMinutes());
+  const ss = format2(d.getSeconds());
+  return `${y}-${m}-${dd} ${hh}:${mm}:${ss}`;
+}
+
+function formatDuration(ms){
+  if (!isFinite(ms) || ms <= 0) return '0 分钟';
+  const totalMin = Math.ceil(ms / 60000);
+  const days = Math.floor(totalMin / (60*24));
+  const hours = Math.floor((totalMin % (60*24)) / 60);
+  const mins = totalMin % 60;
+  const parts = [];
+  if (days) parts.push(days + ' 天');
+  if (hours) parts.push(hours + ' 小时');
+  if (mins || parts.length === 0) parts.push(mins + ' 分钟');
+  return parts.join(' ');
+}
+
+function getAutoRecipientsCount(){
+  const manualEl = get('manual_recipient_count');
+  let manual = 0;
+  if (manualEl) manual = Number(manualEl.value || 0);
+  if (manual > 0) return Math.floor(manual);
+
+  const ta = get('recipients_text');
+  const dedupe = !!(get('dedupe') && get('dedupe').checked);
+  if (ta && (ta.value || '').trim()){
+    const lines = (ta.value || '')
+      .split(/\r?\n/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    if (dedupe){
+      const set = new Set(lines.map(s => s.toLowerCase()));
+      return set.size;
+    }
+    return lines.length;
+  }
+  // fallback 用右侧累计数
+  const recTotalEl = get('recTotal');
+  if (recTotalEl) {
+    const n = parseInt(recTotalEl.textContent || '0', 10);
+    if (isFinite(n) && n > 0) return n;
+  }
+  return 0;
+}
+
+function calcEstimate(){
+  const panel = get('estimate_panel');
+  if (!panel) return; // 页面不存在则忽略
+
+  const rateEl = get('setting.per_hour_limit');
+  const rate = Number((rateEl && rateEl.value) ? rateEl.value : 0);
+  const cnt = getAutoRecipientsCount();
+
+  const now = new Date();
+  const estNow = get('estNow');
+  const estDuration = get('estDuration');
+  const estEnd = get('estEnd');
+  const estRate = get('estRate');
+  const estCount = get('estCount');
+
+  if (estNow) estNow.textContent = formatDateTime(now);
+  if (estRate) estRate.textContent = rate > 0 ? String(rate) : '不限/未设';
+  if (estCount) estCount.textContent = String(cnt);
+
+  if (!(rate > 0)){
+    if (estDuration) estDuration.textContent = '无法计算（每小时条数未设置或为 0=不限）';
+    if (estEnd) estEnd.textContent = '—';
+    return;
+  }
+  if (!(cnt > 0)){
+    if (estDuration) estDuration.textContent = '—';
+    if (estEnd) estEnd.textContent = '—';
+    return;
+  }
+
+  const hours = cnt / rate; // 以小时为单位
+  const ms = Math.ceil(hours * 3600 * 1000);
+  const end = new Date(now.getTime() + ms);
+  if (estDuration) estDuration.textContent = formatDuration(ms);
+  if (estEnd) estEnd.textContent = formatDateTime(end);
+}
+
+// 事件绑定以便实时更新
+const rateInput = get('setting.per_hour_limit');
+if (rateInput) rateInput.addEventListener('input', () => { try { calcEstimate(); } catch(e) {} });
+const recTa = get('recipients_text');
+if (recTa) recTa.addEventListener('input', () => { try { calcEstimate(); } catch(e) {} });
+const dedupeCb = get('dedupe');
+if (dedupeCb) dedupeCb.addEventListener('change', () => { try { calcEstimate(); } catch(e) {} });
+const manualCnt = get('manual_recipient_count');
+if (manualCnt) manualCnt.addEventListener('input', () => { try { calcEstimate(); } catch(e) {} });
+
+// 首次渲染
+try { calcEstimate(); } catch(e) {}
