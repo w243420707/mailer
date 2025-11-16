@@ -33,14 +33,16 @@ install_docker(){
 }
 
 install_compose(){
+  # 设置全局变量 COMPOSE_PLUGIN=1 表示使用 docker compose 插件；0 表示使用 docker-compose 二进制
+  COMPOSE_PLUGIN=0
   if docker compose version >/dev/null 2>&1; then
+    COMPOSE_PLUGIN=1
     log "已检测到 docker compose (插件)"
-    echo "compose_cmd=docker compose"
     return
   fi
   if command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_PLUGIN=0
     log "已检测到 docker-compose (独立二进制)"
-    echo "compose_cmd=docker-compose"
     return
   fi
   log "安装 Docker Compose 插件..."
@@ -54,7 +56,7 @@ install_compose(){
   curl -SL "https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-${arch}" -o /usr/local/lib/docker/cli-plugins/docker-compose
   chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
   if docker compose version >/dev/null 2>&1; then
-    echo "compose_cmd=docker compose"
+    COMPOSE_PLUGIN=1
   else
     err "安装 docker compose 插件失败，请手动安装后重试"; exit 1
   fi
@@ -87,13 +89,15 @@ sync_repo(){
 }
 
 compose_up(){
-  local compose_cmd_var
-  compose_cmd_var=$(install_compose)
-  # shellcheck disable=SC2163
-  eval "$compose_cmd_var"
+  install_compose
   cd "$APP_DIR"
-  log "使用 ${compose_cmd} 启动服务"
-  ${compose_cmd} up -d --build
+  if [ "$COMPOSE_PLUGIN" = "1" ]; then
+    log "使用 docker compose 启动服务"
+    docker compose up -d --build
+  else
+    log "使用 docker-compose 启动服务"
+    docker-compose up -d --build
+  fi
 }
 
 main(){
