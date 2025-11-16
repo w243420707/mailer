@@ -13,13 +13,16 @@ async function fetchConfig() {
   setVal('postal.server', j?.postal?.server);
   setVal('postal.key', j?.postal?.key);
   setVal('postal.from_name', j?.postal?.from_name);
-  setVal('postal.from_email', j?.postal?.from_email);
-  const subs = (j?.setting?.subjects || []).filter(x => (x ?? '').toString().trim() !== '');
-  setVal('setting.subject1', subs[0] || (j?.setting?.subject || ''));
-  setVal('setting.subject2', subs[1] || '');
-  setVal('setting.subject3', subs[2] || '');
-  setVal('setting.subject4', subs[3] || '');
-  setVal('setting.subject5', subs[4] || '');
+  // 发件邮箱：支持数组或单值
+  const froms = Array.isArray(j?.postal?.from_emails)
+    ? j.postal.from_emails
+    : (j?.postal?.from_email ? [j.postal.from_email] : []);
+  setVal('postal.from_emails', (froms || []).filter(Boolean).join('\n'));
+  // 主题：支持数组或单值
+  const subs = (j?.setting?.subjects || [])
+    .filter(x => (x ?? '').toString().trim() !== '');
+  const subLines = subs.length ? subs : ((j?.setting?.subject ? [j.setting.subject] : []));
+  setVal('setting.subjects_multiline', (subLines || []).join('\n'));
   // 兼容旧字段 limit：优先 per_hour_limit
   setVal('setting.per_hour_limit', j?.setting?.per_hour_limit ?? j?.setting?.limit);
   setVal('setting.proxy', j?.setting?.proxy);
@@ -36,27 +39,26 @@ get('save').onclick = async () => {
   // 简单校验
   const server = getVal('postal.server').trim();
   const key = getVal('postal.key').trim();
-  const from_email = getVal('postal.from_email').trim();
-  if (!server || !key || !from_email) {
-    alert('server / key / from_email 不能为空');
+  const from_emails_lines = (getVal('postal.from_emails') || '').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  if (!server || !key || from_emails_lines.length === 0) {
+    alert('server / key / from_emails 至少需要一个');
     return;
   }
 
   // 组装完整配置对象，避免丢字段
-  const subjects = [
-    getVal('setting.subject1').trim(),
-    getVal('setting.subject2').trim(),
-    getVal('setting.subject3').trim(),
-    getVal('setting.subject4').trim(),
-    getVal('setting.subject5').trim(),
-  ].filter(x => !!x);
+  const subjects = (getVal('setting.subjects_multiline') || '')
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(Boolean);
   const perHour = Number(getVal('setting.per_hour_limit') || 0);
   const payload = {
     postal: {
       server,
       key,
       from_name: getVal('postal.from_name'),
-      from_email
+      // 新：发件邮箱列表，同时兼容旧字段 from_email
+      from_emails: from_emails_lines,
+      from_email: from_emails_lines[0] || ''
     },
     setting: {
       subjects,

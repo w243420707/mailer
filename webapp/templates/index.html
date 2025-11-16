@@ -39,22 +39,16 @@
                 <input id="postal.from_name" class="input" type="text" placeholder="Your Name" />
               </div>
               <div class="row">
-                <label class="muted">发件邮箱</label>
-                <input id="postal.from_email" class="input" type="email" placeholder="you@domain.com" />
+                <label class="muted">发件邮箱（每行一个）</label>
+                <textarea id="postal.from_emails" class="textarea" placeholder="you@domain.com\nno-reply@domain.com"></textarea>
               </div>
             </section>
 
             <section>
               <div class="section-title">
-                <h3 style="margin:0">主题（最多 5 个，轮询）</h3>
+                <h3 style="margin:0">主题（每行一个，轮询）</h3>
               </div>
-              <div class="subjects">
-                <input id="setting.subject1" class="input" placeholder="主题 1" />
-                <input id="setting.subject2" class="input" placeholder="主题 2" />
-                <input id="setting.subject3" class="input" placeholder="主题 3" />
-                <input id="setting.subject4" class="input" placeholder="主题 4" />
-                <input id="setting.subject5" class="input" placeholder="主题 5" />
-              </div>
+              <textarea id="setting.subjects_multiline" class="textarea" placeholder="主题 A\n主题 B\n主题 C"></textarea>
               <div class="row" style="margin-top:10px;">
                 <label class="muted">限制每小时条数</label>
                 <input id="setting.per_hour_limit" class="input" type="number" placeholder="例如 0=不限 或 600" />

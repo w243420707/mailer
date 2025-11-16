@@ -132,6 +132,15 @@ def _load_core_settings():
     if not subjects and single_subject:
         subjects = [single_subject]
 
+    # 发件邮箱：支持 from_emails 数组，兼容旧的 from_email
+    from_emails = postal.get("from_emails")
+    if isinstance(from_emails, str):
+        from_emails = [from_emails]
+    if not isinstance(from_emails, list):
+        fe = postal.get("from_email", "")
+        from_emails = [fe] if fe else []
+    from_emails = [str(e).strip() for e in from_emails if str(e).strip()]
+
     # 每小时限制，兼容旧的 limit
     per_hour_limit = setting.get("per_hour_limit", 0) or setting.get("limit", 0)
 
@@ -139,7 +148,9 @@ def _load_core_settings():
         "server": postal.get("server", ""),
         "key": postal.get("key", ""),
         "from_name": postal.get("from_name", ""),
-        "from_email": postal.get("from_email", ""),
+        # 向后兼容：提供 from_email（首个）与 from_emails（数组）
+        "from_email": (from_emails[0] if from_emails else ""),
+        "from_emails": from_emails,
         "subject": single_subject,
         "subjects": subjects,
         "per_hour_limit": per_hour_limit,
@@ -330,6 +341,11 @@ def api_send_list():
         if not subjects:
             return ""
         return subjects[(i - 1) % len(subjects)]
+    def pick_from(i: int):
+        froms = core.get("from_emails") or []
+        if froms:
+            return froms[(i - 1) % len(froms)]
+        return core.get("from_email")
 
     def worker_list(to_list):
         _clear_cancel_flag()
@@ -349,7 +365,7 @@ def api_send_list():
                 core.get("server"),
                 core.get("key"),
                 core.get("from_name"),
-                core.get("from_email"),
+                pick_from(i),
                 addr,
                 subject_now,
                 rendered,
@@ -431,6 +447,11 @@ def api_send_all():
         if not subjects:
             return ""
         return subjects[(i - 1) % len(subjects)]
+    def pick_from(i: int):
+        froms = core.get("from_emails") or []
+        if froms:
+            return froms[(i - 1) % len(froms)]
+        return core.get("from_email")
 
     def worker_all():
         _clear_cancel_flag()
@@ -450,7 +471,7 @@ def api_send_all():
                 core.get("server"),
                 core.get("key"),
                 core.get("from_name"),
-                core.get("from_email"),
+                pick_from(i),
                 addr,
                 subject_now,
                 rendered,
