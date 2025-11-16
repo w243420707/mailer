@@ -33,11 +33,16 @@ Web 界面:
  
 提示：脚本会自动安装 Docker 与 docker compose 插件（或检测已安装的 docker-compose），开放 6253 端口（若检测到 UFW/firewalld），然后将仓库克隆到 `/opt/mailer` 并启动。
 
-## 基础认证（推荐开启）
+## 基础认证（默认开启）
 
-为防止未授权访问，可通过环境变量启用 HTTP Basic Auth：
+为了防止未授权访问，应用默认启用 HTTP Basic Auth，默认账户为：
 
-- `MAILER_AUTH_USER`: 用户名（非空即启用认证）
+- 用户名：`admin`
+- 密码：`admin`
+
+你可以通过环境变量覆盖默认凭据：
+
+- `MAILER_AUTH_USER`: 用户名
 - `MAILER_AUTH_PASS`: 密码
 
 示例（docker-compose 覆盖）:
@@ -50,7 +55,7 @@ services:
 			- MAILER_AUTH_PASS=change-me
 ```
 
-未设置或留空则不启用认证。
+未设置则使用默认 `admin/admin`。
 
 ## 直接粘贴邮箱列表发送
 

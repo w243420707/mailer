@@ -10,8 +10,8 @@ CONFIG_PATH = os.path.join(PROJECT_ROOT, "config.toml")
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
-AUTH_USER = os.getenv("MAILER_AUTH_USER", "").strip()
-AUTH_PASS = os.getenv("MAILER_AUTH_PASS", "").strip()
+AUTH_USER = os.getenv("MAILER_AUTH_USER", "admin").strip()
+AUTH_PASS = os.getenv("MAILER_AUTH_PASS", "admin").strip()
 
 
 def check_auth(auth_header: str) -> bool:
