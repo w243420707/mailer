@@ -2,6 +2,80 @@
 <html lang="zh-cn">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mailer UI</title>
+    <link rel="stylesheet" href="/static/styles.css?v=20251117" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div>
+          <div class="title">Mailer UI</div>
+          <div class="subtitle">配置·粘贴收件人·后台发送·进度跟踪</div>
+        </div>
+        <div class="toolbar">
+          <button id="refresh" class="btn btn-ghost" type="button">刷新配置</button>
+          <button id="save" class="btn btn-primary" type="button">保存配置</button>
+          <small id="saveMsg" class="muted"></small>
+        </div>
+      </div>
+
+      <div class="layout-grid">
+        <!-- 左列：配置 + 粘贴发送 -->
+        <div class="stack">
+          <div class="card" id="card-config">
+            <h3>基本配置</h3>
+            <section>
+              <div class="row">
+                <label class="muted">Postal 服务器</label>
+                <input id="postal.server" class="input" type="text" placeholder="https://postal.yourdomain.com" />
+              </div>
+              <div class="row">
+                <label class="muted">API Key</label>
+                <input id="postal.key" class="input" type="password" placeholder="xxxxxxxx" />
+              </div>
+              <div class="row">
+                <label class="muted">发件人名称</label>
+                <input id="postal.from_name" class="input" type="text" placeholder="Your Name" />
+              </div>
+              <div class="row">
+                <label class="muted">发件邮箱</label>
+                <input id="postal.from_email" class="input" type="email" placeholder="you@domain.com" />
+              </div>
+            </section>
+
+            <section>
+              <div class="section-title">
+                <h3 style="margin:0">主题（最多 5 个，轮询）</h3>
+              </div>
+              <div class="subjects">
+                <input id="setting.subject1" class="input" placeholder="主题 1" />
+                <input id="setting.subject2" class="input" placeholder="主题 2" />
+                <input id="setting.subject3" class="input" placeholder="主题 3" />
+                <input id="setting.subject4" class="input" placeholder="主题 4" />
+                <input id="setting.subject5" class="input" placeholder="主题 5" />
+              </div>
+              <div class="row" style="margin-top:10px;">
+                <label class="muted">每批次限速</label>
+                <input id="setting.limit" class="input" type="number" placeholder="例如 0 或 100" />
+              </div>
+              <div class="row">
+                <label class="muted">代理（可选）</label>
+                <input id="setting.proxy" class="input" type="text" placeholder="http://127.0.0.1:7890" />
+              </div>
+            </section>
+          </div>
+
+          <div class="card" id="card-send">
+            <h3>粘贴收件人并发送</h3>
+            <section>
+              <div class="row" style="grid-template-columns:1fr;">
+                <textarea id="recipients_text" class="textarea" placeholder="a@example.com\nb@example.com\nc@example.com"></textarea>
+              </div>
+              <div class="row" style="grid-template-columns:160px 1fr;">
+                <label class="muted" for="dedupe">去重</label>
+                <input id="dedupe" type="checkbox" checked />
+              </div>
             </section>
             <section>
               <div class="row">
@@ -57,64 +131,6 @@
       </div>
     </div>
 
-    <div>
-      <h3>发送结果</h3>
-      <button id="last">获取上次结果</button>
-      <pre id="result"></pre>
-    </div>
-
-    <hr/>
-    <div>
-      <h3>粘贴收件人列表发送（支持去重）</h3>
-      <div style="max-width: 800px;">
-        <label>
-          收件人（换行/逗号/分号分隔）
-          <textarea id="recipients_text" rows="8" style="width:100%;" placeholder="a@example.com\nb@example.com\nc@example.com"></textarea>
-        </label>
-        <div style="margin:6px 0;">
-          <label><input id="dedupe" type="checkbox" checked /> 去重</label>
-        </div>
-        <label>
-          主题（留空则使用配置中的 subject）
-          <input id="subject_override" type="text" style="width:100%;" />
-        </label>
-        <label>
-          邮件内容（HTML）
-          <textarea id="body_html" rows="10" style="width:100%;" placeholder="<p>您好...</p>"></textarea>
-          <small>支持占位：{{email}}、{{index}}、{{domain}}</small>
-        </label>
-        <div style="margin-top:8px;">
-          <button id="sendList">发送粘贴列表（后台）</button>
-          <button id="saveOnly" type="button">仅保存不发送</button>
-          <button id="sendAll" type="button">对已累积收件人发送</button>
-        </div>
-      </div>
-    </div>
-
-    <hr/>
-    <div>
-      <h3>收件人列表（recipients.txt）</h3>
-      <div>
-        <span>总数：<b id="recTotal">0</b></span>
-        <button id="expRec">导出</button>
-        <button id="clearRec">清空</button>
-      </div>
-      <pre id="recPreview" style="max-height: 200px; overflow:auto; background:#f7f7f7; padding:8px;"></pre>
-    </div>
-
-    <hr/>
-    <div>
-      <h3>发送进度</h3>
-      <div style="width:100%;max-width:600px;background:#eee;height:16px;border-radius:8px;overflow:hidden;">
-        <div id="progBar" style="width:0%;height:100%;background:#4caf50;"></div>
-      </div>
-      <div id="progText" style="margin-top:6px;color:#333;">状态：idle</div>
-    </div>
-    <details>
-      <summary>查看原始配置 JSON</summary>
-      <pre id="config">加载中...</pre>
-    </details>
-
-    <script src="/static/main.js"></script>
+    <script src="/static/main.js?v=20251117"></script>
   </body>
-</html>
+ </html>
