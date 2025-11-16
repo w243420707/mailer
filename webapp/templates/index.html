@@ -76,15 +76,6 @@
                 <label class="muted" for="dedupe">去重</label>
                 <input id="dedupe" type="checkbox" checked />
               </div>
-              <div class="row">
-                <label class="muted" for="manual_recipient_count">收件人数（可选）</label>
-                <input id="manual_recipient_count" class="input" type="number" placeholder="留空则自动统计（粘贴框或已累积）" />
-              </div>
-              <div id="estimate_panel" class="estimator" aria-live="polite">
-                <div class="est-row"><span class="est-key">当前时间：</span><span id="estNow" class="est-val">—</span></div>
-                <div class="est-row"><span class="est-key">预计耗时：</span><span id="estDuration" class="est-val">—</span> <span class="est-hint">（每小时 <span id="estRate">—</span> 条，收件人 <span id="estCount">—</span> 个）</span></div>
-                <div class="est-row"><span class="est-key">预计完成：</span><span id="estEnd" class="est-val">—</span></div>
-              </div>
             </section>
             <section>
               <div class="row">
@@ -108,12 +99,19 @@
 
         <!-- 右列：结果 / 进度 / 收件人 / 原始配置 -->
         <div class="stack">
-          <div class="card" id="card-result">
-            <h3>发送结果</h3>
-            <div class="toolbar">
-              <button id="last" class="btn btn-ghost" type="button">获取上次结果</button>
-            </div>
-            <pre id="result" style="margin-top:12px; max-height:240px;"></pre>
+          <div class="card" id="card-estimate">
+            <h3>发送时间预估</h3>
+            <section>
+              <div class="row">
+                <label class="muted" for="manual_recipient_count">收件人数（可选）</label>
+                <input id="manual_recipient_count" class="input" type="number" placeholder="留空则自动统计（粘贴框或已累积）" />
+              </div>
+              <div id="estimate_panel" class="estimator" aria-live="polite">
+                <div class="est-row"><span class="est-key">当前时间：</span><span id="estNow" class="est-val">—</span></div>
+                <div class="est-row"><span class="est-key">预计耗时：</span><span id="estDuration" class="est-val">—</span> <span class="est-hint">（每小时 <span id="estRate">—</span> 条，收件人 <span id="estCount">—</span> 个）</span></div>
+                <div class="est-row"><span class="est-key">预计完成：</span><span id="estEnd" class="est-val">—</span></div>
+              </div>
+            </section>
           </div>
           <div class="card" id="card-progress">
             <h3>发送进度</h3>

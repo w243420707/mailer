@@ -89,12 +89,7 @@ get('save').onclick = async () => {
 
 // 已移除上传/Excel发送相关功能
 
-get('last').onclick = async () => {
-  const r = await fetch('/api/last_result');
-  if (!r.ok) return alert('暂无结果');
-  const j = await r.json();
-  document.getElementById('result').textContent = JSON.stringify(j, null, 2);
-};
+// 已移除右侧“发送结果”卡片与按钮
 
 fetchConfig();
 
