@@ -14,6 +14,7 @@ RECIP_PATH = os.path.join(PROJECT_ROOT, "recipients.txt")
 BODY_PATH = os.path.join(PROJECT_ROOT, "body_template.html")
 BODY_TXT_PATH = os.path.join(PROJECT_ROOT, "body_template.txt")
 PROGRESS_PATH = os.path.join(PROJECT_ROOT, "send_progress.json")
+CANCEL_PATH = os.path.join(PROJECT_ROOT, "send_cancel.flag")
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
@@ -222,6 +223,39 @@ def _update_progress(data: dict):
         pass
 
 
+def _clear_cancel_flag():
+    try:
+        if os.path.exists(CANCEL_PATH):
+            os.remove(CANCEL_PATH)
+    except Exception:
+        pass
+
+
+def _set_cancel_flag():
+    try:
+        with open(CANCEL_PATH, "w", encoding="utf-8") as f:
+            f.write("stop")
+    except Exception:
+        pass
+
+
+def _is_cancelled() -> bool:
+    return os.path.exists(CANCEL_PATH)
+
+
+def _sleep_with_cancel(seconds: float) -> bool:
+    if seconds <= 0:
+        return False
+    end = time.time() + seconds
+    while True:
+        if _is_cancelled():
+            return True
+        now = time.time()
+        if now >= end:
+            return False
+        time.sleep(min(1.0, end - now))
+
+
 def _render_body(template_html: str, email: str, index: int):
     # 简单占位符替换：{{email}}、{{index}}、{{domain}}
     if not template_html:
@@ -298,11 +332,16 @@ def api_send_list():
         return subjects[(i - 1) % len(subjects)]
 
     def worker_list(to_list):
+        _clear_cancel_flag()
         session = init_session(core.get("proxy") or "")
         success = 0
         total = len(to_list)
         _update_progress({"mode": "list", "status": "running", "sent": 0, "success": 0, "total": total})
+        stopped = False
         for i, addr in enumerate(to_list, start=1):
+            if _is_cancelled():
+                stopped = True
+                break
             rendered = _render_body(html_body, addr, i)
             subject_now = pick_subject(i)
             ok = send_mail(
@@ -319,12 +358,16 @@ def api_send_list():
                 success += 1
             _update_progress({"mode": "list", "status": "running", "sent": i, "success": success, "total": total, "current_email": addr})
             if delay > 0 and i < total:
-                time.sleep(delay)
-        result = {"ok": True, "mode": "list", "success": success, "total": total}
+                if _sleep_with_cancel(delay):
+                    stopped = True
+                    break
+        status = "stopped" if stopped else "completed"
+        sent = i-1 if stopped else total
+        result = {"ok": True, "mode": "list", "success": success, "total": total, "status": status, "sent": sent}
         with open(os.path.join(PROJECT_ROOT, "last_send_result.json"), "w", encoding="utf-8") as f:
             import json
             json.dump(result, f, ensure_ascii=False)
-        _update_progress({"mode": "list", "status": "completed", "sent": total, "success": success, "total": total})
+        _update_progress({"mode": "list", "status": status, "sent": sent, "success": success, "total": total})
 
     t = threading.Thread(target=worker_list, args=(emails,), daemon=True)
     t.start()
@@ -390,11 +433,16 @@ def api_send_all():
         return subjects[(i - 1) % len(subjects)]
 
     def worker_all():
+        _clear_cancel_flag()
         session = init_session(core.get("proxy") or "")
         success = 0
         total = len(to_list)
         _update_progress({"mode": "all", "status": "running", "sent": 0, "success": 0, "total": total})
+        stopped = False
         for i, addr in enumerate(to_list, start=1):
+            if _is_cancelled():
+                stopped = True
+                break
             rendered = _render_body(html_body, addr, i)
             subject_now = pick_subject(i)
             ok = send_mail(
@@ -411,12 +459,16 @@ def api_send_all():
                 success += 1
             _update_progress({"mode": "all", "status": "running", "sent": i, "success": success, "total": total, "current_email": addr})
             if delay > 0 and i < total:
-                time.sleep(delay)
-        result = {"ok": True, "mode": "all", "success": success, "total": total}
+                if _sleep_with_cancel(delay):
+                    stopped = True
+                    break
+        status = "stopped" if stopped else "completed"
+        sent = i-1 if stopped else total
+        result = {"ok": True, "mode": "all", "success": success, "total": total, "status": status, "sent": sent}
         with open(os.path.join(PROJECT_ROOT, "last_send_result.json"), "w", encoding="utf-8") as f:
             import json
             json.dump(result, f, ensure_ascii=False)
-        _update_progress({"mode": "all", "status": "completed", "sent": total, "success": success, "total": total})
+        _update_progress({"mode": "all", "status": status, "sent": sent, "success": success, "total": total})
 
     t = threading.Thread(target=worker_all, daemon=True)
     t.start()
@@ -451,6 +503,25 @@ def api_progress():
     with open(PROGRESS_PATH, "r", encoding="utf-8") as f:
         data = json.load(f)
     return jsonify(data)
+
+
+@app.route("/api/stop", methods=["POST"]) 
+def api_stop():
+    _set_cancel_flag()
+    # 标记状态为 stopping，前端立刻可见
+    try:
+        import json
+        if os.path.exists(PROGRESS_PATH):
+            with open(PROGRESS_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        else:
+            data = {"status": "idle"}
+        data["status"] = "stopping"
+        with open(PROGRESS_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception:
+        pass
+    return jsonify({"ok": True})
 
 
 @app.route("/api/body_template", methods=["GET"])

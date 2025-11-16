@@ -217,6 +217,21 @@ async function autoInitProgress(){
   } catch(e){ /* 忽略 */ }
 }
 
+// 强制停止
+const stopBtn = get('forceStop');
+if (stopBtn) {
+  stopBtn.onclick = async () => {
+    if (!confirm('确定要强制停止当前发送吗？')) return;
+    try {
+      const r = await fetch('/api/stop', { method: 'POST' });
+      const j = await r.json();
+      if (!j.ok) return alert('停止失败');
+      // 立即刷新进度，并保持轮询直到状态变为 stopped
+      startPollProgress();
+    } catch(e) { alert('停止请求异常'); }
+  };
+}
+
 // ——— 邮件内容(HTML) 自动缓存与恢复 ———
 initBodyAutosave();
 restoreBodyTemplate();
