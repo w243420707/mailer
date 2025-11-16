@@ -453,5 +453,20 @@ def api_progress():
     return jsonify(data)
 
 
+@app.route("/api/body_template", methods=["GET"])
+def api_body_template():
+    # 返回最近保存的邮件 HTML 模板，供前端在刷新后恢复
+    content = ""
+    try:
+        # 优先使用 HTML 文件，其次尝试 TXT 文件
+        path = BODY_PATH if os.path.exists(BODY_PATH) else (BODY_TXT_PATH if os.path.exists(BODY_TXT_PATH) else None)
+        if path:
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+    except Exception:
+        content = ""
+    return jsonify({"ok": True, "html": content})
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=6253)

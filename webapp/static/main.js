@@ -102,6 +102,7 @@ get('sendList').onclick = async () => {
   const dedupe = get('dedupe').checked;
   const subject = get('subject_override').value || '';
   const html_body = get('body_html').value || '';
+  try { localStorage.setItem('mailer.body_html', html_body); } catch(e) {}
   if (!recipients.trim()) return alert('请粘贴至少一个邮箱');
   if (!html_body.trim()) return alert('请填写邮件内容');
   const r = await fetch('/api/send_list', {
@@ -120,6 +121,7 @@ get('sendList').onclick = async () => {
 get('saveOnly').onclick = async () => {
   const recipients = get('recipients_text').value || '';
   const html_body = get('body_html').value || '';
+  try { localStorage.setItem('mailer.body_html', html_body); } catch(e) {}
   if (!recipients.trim()) return alert('请粘贴至少一个邮箱');
   const r = await fetch('/api/save_list', {
     method: 'POST',
@@ -136,6 +138,7 @@ get('saveOnly').onclick = async () => {
 get('sendAll').onclick = async () => {
   const subject = get('subject_override').value || '';
   const html_body = get('body_html').value || '';
+  try { localStorage.setItem('mailer.body_html', html_body); } catch(e) {}
   const r = await fetch('/api/send_all', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -212,4 +215,36 @@ async function autoInitProgress(){
       startPollProgress();
     }
   } catch(e){ /* 忽略 */ }
+}
+
+// ——— 邮件内容(HTML) 自动缓存与恢复 ———
+initBodyAutosave();
+restoreBodyTemplate();
+
+function initBodyAutosave(){
+  const el = get('body_html');
+  if (!el) return;
+  el.addEventListener('input', () => {
+    try { localStorage.setItem('mailer.body_html', el.value || ''); } catch(e) {}
+  });
+}
+
+async function restoreBodyTemplate(){
+  const el = get('body_html');
+  if (!el) return;
+  // 1) 本地缓存优先
+  try {
+    const cached = localStorage.getItem('mailer.body_html');
+    if (cached && cached.trim()) { el.value = cached; return; }
+  } catch(e) {}
+  // 2) 后端最近保存的模板
+  try {
+    const r = await fetch('/api/body_template');
+    if (r.ok){
+      const j = await r.json();
+      if (j && typeof j.html === 'string' && j.html.trim()) {
+        el.value = j.html;
+      }
+    }
+  } catch(e) {}
 }
