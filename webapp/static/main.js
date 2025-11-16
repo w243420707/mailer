@@ -20,7 +20,8 @@ async function fetchConfig() {
   setVal('setting.subject3', subs[2] || '');
   setVal('setting.subject4', subs[3] || '');
   setVal('setting.subject5', subs[4] || '');
-  setVal('setting.limit', j?.setting?.limit);
+  // 兼容旧字段 limit：优先 per_hour_limit
+  setVal('setting.per_hour_limit', j?.setting?.per_hour_limit ?? j?.setting?.limit);
   setVal('setting.proxy', j?.setting?.proxy);
   // 原始 JSON 视图
   const pre = get('config');
@@ -47,6 +48,7 @@ get('save').onclick = async () => {
     getVal('setting.subject4').trim(),
     getVal('setting.subject5').trim(),
   ].filter(x => !!x);
+  const perHour = Number(getVal('setting.per_hour_limit') || 0);
   const payload = {
     postal: {
       server,
@@ -57,7 +59,10 @@ get('save').onclick = async () => {
     setting: {
       subjects,
       subject: subjects[0] || '',
-      limit: Number(getVal('setting.limit') || 0),
+      // 新字段：每小时限制
+      per_hour_limit: perHour,
+      // 为兼容旧版本，冗余写回旧字段 limit（值相同）
+      limit: perHour,
       proxy: getVal('setting.proxy')
     }
   };
@@ -186,3 +191,25 @@ async function updateProgress(){
 }
 
 refreshRecipientsInfo();
+
+// 页面加载后自动检测进度，若仍在运行则继续轮询
+autoInitProgress();
+
+async function autoInitProgress(){
+  try {
+    const r = await fetch('/api/progress');
+    if (!r.ok) return;
+    const j = await r.json();
+    // 立即渲染一次
+    const total = j.total || 0;
+    const sent = j.sent || 0;
+    const status = j.status || 'idle';
+    const success = j.success || 0;
+    const pct = total > 0 ? Math.round((sent/total)*100) : 0;
+    get('progBar').style.width = pct + '%';
+    get('progText').textContent = `状态：${status}，进度：${sent}/${total}（成功 ${success}）` + (j.current_email? `，当前：${j.current_email}` : '');
+    if (status === 'running') {
+      startPollProgress();
+    }
+  } catch(e){ /* 忽略 */ }
+}

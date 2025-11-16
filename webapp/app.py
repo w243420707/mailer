@@ -12,6 +12,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 CONFIG_PATH = os.path.join(PROJECT_ROOT, "config.toml")
 RECIP_PATH = os.path.join(PROJECT_ROOT, "recipients.txt")
 BODY_PATH = os.path.join(PROJECT_ROOT, "body_template.html")
+BODY_TXT_PATH = os.path.join(PROJECT_ROOT, "body_template.txt")
 PROGRESS_PATH = os.path.join(PROJECT_ROOT, "send_progress.json")
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -130,6 +131,9 @@ def _load_core_settings():
     if not subjects and single_subject:
         subjects = [single_subject]
 
+    # 每小时限制，兼容旧的 limit
+    per_hour_limit = setting.get("per_hour_limit", 0) or setting.get("limit", 0)
+
     return {
         "server": postal.get("server", ""),
         "key": postal.get("key", ""),
@@ -137,7 +141,7 @@ def _load_core_settings():
         "from_email": postal.get("from_email", ""),
         "subject": single_subject,
         "subjects": subjects,
-        "limit": setting.get("limit", 0),
+        "per_hour_limit": per_hour_limit,
         "proxy": setting.get("proxy", ""),
     }
 
@@ -199,6 +203,12 @@ def _save_body_template(html_body: str):
         return
     with open(BODY_PATH, "w", encoding="utf-8") as f:
         f.write(html_body)
+    # 额外保存一份 txt 便于快速查看或外部同步
+    try:
+        with open(BODY_TXT_PATH, "w", encoding="utf-8") as f:
+            f.write(html_body)
+    except Exception:
+        pass
 
 
 def _update_progress(data: dict):
@@ -274,8 +284,8 @@ def api_send_list():
 
     delay = 0
     try:
-        limit = int(core.get("limit") or 0)
-        delay = (60 / limit) if limit > 0 else 0
+        limit = int(core.get("per_hour_limit") or 0)
+        delay = (3600 / limit) if limit > 0 else 0
     except Exception:
         delay = 0
 
@@ -369,8 +379,8 @@ def api_send_all():
 
     delay = 0
     try:
-        limit = int(core.get("limit") or 0)
-        delay = (60 / limit) if limit > 0 else 0
+        limit = int(core.get("per_hour_limit") or 0)
+        delay = (3600 / limit) if limit > 0 else 0
     except Exception:
         delay = 0
 
